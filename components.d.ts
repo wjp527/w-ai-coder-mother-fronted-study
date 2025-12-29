@@ -30,6 +30,8 @@ declare module 'vue' {
     AppCard: typeof import('./src/components/AppCard.vue')['default']
     AppDetailModal: typeof import('./src/components/AppDetailModal.vue')['default']
     ARow: typeof import('ant-design-vue/es')['Row']
+    ASelect: typeof import('ant-design-vue/es')['Select']
+    ASelectOption: typeof import('ant-design-vue/es')['SelectOption']
     ASpace: typeof import('ant-design-vue/es')['Space']
     ASpin: typeof import('ant-design-vue/es')['Spin']
     ATable: typeof import('ant-design-vue/es')['Table']

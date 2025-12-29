@@ -6,6 +6,7 @@ import { useLoginUserStore } from '@/stores/loginUser'
 import { addApp, listMyAppVoByPage, listGoodAppVoByPage } from '@/api/appController'
 import { getDeployUrl } from '@/config/env'
 import AppCard from '@/components/AppCard.vue'
+import { PaperClipOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
 
 const router = useRouter()
 const loginUserStore = useLoginUserStore()
@@ -35,7 +36,21 @@ const setPrompt = (prompt: string) => {
   userPrompt.value = prompt
 }
 
-// 优化提示词功能已移除
+// 优化提示词
+const optimizePrompt = () => {
+  if (!userPrompt.value.trim()) {
+    message.warning('请先输入应用描述')
+    return
+  }
+  // TODO: 实现提示词优化功能
+  message.info('提示词优化功能开发中...')
+}
+
+// 上传文件
+const handleUpload = () => {
+  // TODO: 实现文件上传功能
+  message.info('文件上传功能开发中...')
+}
 
 // 创建应用
 const createApp = async () => {
@@ -161,25 +176,56 @@ onMounted(() => {
     <div class="container">
       <!-- 网站标题和描述 -->
       <div class="hero-section">
-        <h1 class="hero-title">AI 应用生成平台</h1>
-        <p class="hero-description">一句话轻松创建网站应用</p>
+        <h1 class="hero-title">
+          <span>一句话</span>
+          <span class="cat-icon">🐱</span>
+          <span>呈所想</span>
+        </h1>
+        <p class="hero-description">与 AI 对话轻松创建应用和网站</p>
       </div>
 
       <!-- 用户提示词输入框 -->
       <div class="input-section">
-        <a-textarea
-          v-model:value="userPrompt"
-          placeholder="帮我创建个人博客网站"
-          :rows="4"
-          :maxlength="1000"
-          class="prompt-input"
-        />
-        <div class="input-actions">
-          <a-button type="primary" size="large" @click="createApp" :loading="creating">
-            <template #icon>
-              <span>↑</span>
-            </template>
-          </a-button>
+        <div class="input-panel">
+          <a-textarea
+            v-model:value="userPrompt"
+            placeholder="使用 NoCode 创建一个高效的小工具,帮我计算......."
+            :rows="4"
+            :maxlength="1000"
+            class="prompt-input"
+            :bordered="false"
+          />
+          <div class="input-footer">
+            <div class="input-left-actions">
+              <a-button type="text" size="small" @click="handleUpload" class="action-btn">
+                <template #icon>
+                  <PaperClipOutlined />
+                </template>
+                上传
+              </a-button>
+              <a-button type="text" size="small" @click="optimizePrompt" class="action-btn">
+                <template #icon>
+                  <ThunderboltOutlined />
+                </template>
+                优化
+              </a-button>
+            </div>
+            <div class="input-right-actions">
+              <a-button
+                type="primary"
+                shape="circle"
+                size="large"
+                @click="createApp"
+                :loading="creating"
+                :disabled="!userPrompt.trim()"
+                class="send-button"
+              >
+                <template #icon>
+                  <span class="send-icon">↑</span>
+                </template>
+              </a-button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -187,46 +233,50 @@ onMounted(() => {
       <div class="quick-actions">
         <a-button
           type="default"
+          class="quick-action-btn"
           @click="
             setPrompt(
-              '创建一个现代化的个人博客网站，包含文章列表、详情页、分类标签、搜索功能、评论系统和个人简介页面。采用简洁的设计风格，支持响应式布局，文章支持Markdown格式，首页展示最新文章和热门推荐。',
+              '创建一个波普风格的电商页面，采用鲜艳的色彩搭配和几何图形设计，包含商品展示、购物车、用户登录等功能。',
             )
           "
-          >个人博客网站</a-button
+          >波普风电商页面</a-button
         >
         <a-button
           type="default"
+          class="quick-action-btn"
           @click="
             setPrompt(
-              '设计一个专业的企业官网，包含公司介绍、产品服务展示、新闻资讯、联系我们等页面。采用商务风格的设计，包含轮播图、产品展示卡片、团队介绍、客户案例展示，支持多语言切换和在线客服功能。',
+              '设计一个专业的企业网站，包含公司介绍、产品服务展示、新闻资讯、联系我们等页面。采用商务风格的设计，包含轮播图、产品展示卡片、团队介绍、客户案例展示。',
             )
           "
-          >企业官网</a-button
+          >企业网站</a-button
         >
         <a-button
           type="default"
+          class="quick-action-btn"
           @click="
             setPrompt(
-              '构建一个功能完整的在线商城，包含商品展示、购物车、用户注册登录、订单管理、支付结算等功能。设计现代化的商品卡片布局，支持商品搜索筛选、用户评价、优惠券系统和会员积分功能。',
+              '构建一个电商运营后台管理系统，包含商品管理、订单管理、用户管理、数据统计、营销活动等功能模块。采用现代化的后台管理界面设计。',
             )
           "
-          >在线商城</a-button
+          >电商运营后台</a-button
         >
         <a-button
           type="default"
+          class="quick-action-btn"
           @click="
             setPrompt(
-              '制作一个精美的作品展示网站，适合设计师、摄影师、艺术家等创作者。包含作品画廊、项目详情页、个人简历、联系方式等模块。采用瀑布流或网格布局展示作品，支持图片放大预览和作品分类筛选。',
+              '创建一个暗黑风格的话题社区，包含话题发布、评论互动、用户关注、内容推荐等功能。采用深色主题设计，支持夜间模式。',
             )
           "
-          >作品展示网站</a-button
+          >暗黑话题社区</a-button
         >
       </div>
 
       <!-- 我的作品 -->
-      <div class="section">
+      <div class="section" v-if="loginUserStore.loginUser.id">
         <h2 class="section-title">我的作品</h2>
-        <div class="app-grid">
+        <div class="app-grid" v-if="myApps.length > 0">
           <AppCard
             v-for="app in myApps"
             :key="app.id"
@@ -235,7 +285,20 @@ onMounted(() => {
             @view-work="viewWork"
           />
         </div>
-        <div class="pagination-wrapper">
+        <div class="empty-state" v-else>
+          <div class="empty-card">
+            <div class="empty-preview">
+              <div class="empty-placeholder">🐱</div>
+            </div>
+            <div class="empty-info">
+              <div class="empty-line"></div>
+              <div class="empty-line short"></div>
+              <div class="empty-line shorter"></div>
+            </div>
+          </div>
+          <p class="empty-text">还没有创建应用，试试在上方输入框创建你的第一个应用吧！</p>
+        </div>
+        <div class="pagination-wrapper" v-if="myAppsPage.total > 0">
           <a-pagination
             v-model:current="myAppsPage.current"
             v-model:page-size="myAppsPage.pageSize"
@@ -250,7 +313,7 @@ onMounted(() => {
       <!-- 精选案例 -->
       <div class="section">
         <h2 class="section-title">精选案例</h2>
-        <div class="featured-grid">
+        <div class="featured-grid" v-if="featuredApps.length > 0">
           <AppCard
             v-for="app in featuredApps"
             :key="app.id"
@@ -260,7 +323,19 @@ onMounted(() => {
             @view-work="viewWork"
           />
         </div>
-        <div class="pagination-wrapper">
+        <div class="empty-state" v-else>
+          <div class="empty-card">
+            <div class="empty-preview">
+              <div class="empty-placeholder">✨</div>
+            </div>
+            <div class="empty-info">
+              <div class="empty-line"></div>
+              <div class="empty-line short"></div>
+            </div>
+          </div>
+          <p class="empty-text">暂无精选案例</p>
+        </div>
+        <div class="pagination-wrapper" v-if="featuredAppsPage.total > 0">
           <a-pagination
             v-model:current="featuredAppsPage.current"
             v-model:page-size="featuredAppsPage.pageSize"
@@ -281,13 +356,10 @@ onMounted(() => {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 8%, #e2e8f0 20%, #cbd5e1 100%),
-    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+  background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 30%, #7dd3fc 60%, #38bdf8 100%);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* 科技感网格背景 */
@@ -353,11 +425,11 @@ onMounted(() => {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 40px 60px 100px;
   position: relative;
-  z-index: 2;
+  z-index: 1;
   width: 100%;
   box-sizing: border-box;
 }
@@ -413,14 +485,33 @@ onMounted(() => {
   font-weight: 700;
   margin: 0 0 20px;
   line-height: 1.2;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #10b981 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1e293b;
   letter-spacing: -1px;
   position: relative;
   z-index: 2;
-  animation: titleShimmer 3s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.hero-title .cat-icon {
+  font-size: 48px;
+  display: inline-block;
+  animation: catBounce 2s ease-in-out infinite;
+}
+
+@keyframes catBounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-5px) rotate(-5deg);
+  }
+  75% {
+    transform: translateY(-5px) rotate(5deg);
+  }
 }
 
 @keyframes titleShimmer {
@@ -446,32 +537,113 @@ onMounted(() => {
 .input-section {
   position: relative;
   margin: 0 auto 24px;
-  max-width: 800px;
+  max-width: 1000px;
+}
+
+.input-panel {
+  position: relative;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.input-panel:hover {
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
 }
 
 .prompt-input {
-  border-radius: 16px;
   border: none;
   font-size: 16px;
-  padding: 20px 60px 20px 20px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  padding: 0;
+  padding-bottom: 50px;
+  background: transparent;
+  resize: none;
+  min-height: 120px;
+  line-height: 1.6;
+  color: #1e293b;
+}
+
+.prompt-input::placeholder {
+  color: #94a3b8;
 }
 
 .prompt-input:focus {
-  background: rgba(255, 255, 255, 1);
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
-  transform: translateY(-2px);
+  outline: none;
+  box-shadow: none;
 }
 
-.input-actions {
+.input-footer {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.input-left-actions {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.action-btn {
+  color: #64748b;
+  font-size: 14px;
+  height: 32px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.action-btn:hover {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.input-right-actions {
+  display: flex;
+  align-items: center;
+}
+
+.send-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.send-button:not(:disabled) {
+  background: #3b82f6;
+}
+
+.send-button:not(:disabled):hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.send-button:disabled {
+  background: #d1d5db;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.send-icon {
+  font-size: 18px;
+  color: #fff;
+  font-weight: 600;
 }
 
 /* 快捷按钮 */
@@ -483,20 +655,22 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-.quick-actions .ant-btn {
-  border-radius: 25px;
-  padding: 8px 20px;
+.quick-action-btn {
+  border-radius: 12px;
+  padding: 10px 24px;
   height: auto;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(59, 130, 246, 0.2);
   color: #475569;
   backdrop-filter: blur(15px);
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
+  font-size: 15px;
+  font-weight: 500;
 }
 
-.quick-actions .ant-btn::before {
+.quick-action-btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -507,12 +681,12 @@ onMounted(() => {
   transition: left 0.5s;
 }
 
-.quick-actions .ant-btn:hover::before {
+.quick-action-btn:hover::before {
   left: 100%;
 }
 
-.quick-actions .ant-btn:hover {
-  background: rgba(255, 255, 255, 0.9);
+.quick-action-btn:hover {
+  background: rgba(255, 255, 255, 1);
   border-color: rgba(59, 130, 246, 0.4);
   color: #3b82f6;
   transform: translateY(-2px);
@@ -534,7 +708,7 @@ onMounted(() => {
 /* 我的作品网格 */
 .app-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
 }
@@ -542,7 +716,7 @@ onMounted(() => {
 /* 精选案例网格 */
 .featured-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
 }
@@ -554,14 +728,127 @@ onMounted(() => {
   margin-top: 32px;
 }
 
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-card {
+  max-width: 400px;
+  margin: 0 auto 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.empty-preview {
+  height: 180px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-placeholder {
+  font-size: 64px;
+  opacity: 0.3;
+}
+
+.empty-info {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.empty-line {
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.empty-line.short {
+  width: 70%;
+}
+
+.empty-line.shorter {
+  width: 50%;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.empty-text {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
+}
+
 /* 响应式设计 */
+@media (max-width: 1400px) {
+  .container {
+    padding: 40px 40px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .container {
+    padding: 30px 30px;
+  }
+}
+
 @media (max-width: 768px) {
+  .container {
+    padding: 20px 16px;
+  }
+
   .hero-title {
-    font-size: 32px;
+    font-size: 36px;
+    gap: 12px;
+  }
+
+  .hero-title .cat-icon {
+    font-size: 36px;
   }
 
   .hero-description {
     font-size: 16px;
+  }
+
+  .input-panel {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .prompt-input {
+    min-height: 100px;
+    font-size: 15px;
+  }
+
+  .input-footer {
+    padding: 10px 20px;
+  }
+
+  .action-btn {
+    font-size: 13px;
+    padding: 0 10px;
+    height: 28px;
+  }
+
+  .send-button {
+    width: 36px;
+    height: 36px;
   }
 
   .app-grid,
@@ -571,6 +858,12 @@ onMounted(() => {
 
   .quick-actions {
     justify-content: center;
+    gap: 8px;
+  }
+
+  .quick-action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
   }
 }
 </style>

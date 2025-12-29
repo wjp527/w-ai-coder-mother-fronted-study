@@ -66,6 +66,8 @@ const handleViewWork = () => {
     transform 0.3s,
     box-shadow 0.3s;
   cursor: pointer;
+  position: relative;
+  z-index: 1;
 }
 
 .app-card:hover {
