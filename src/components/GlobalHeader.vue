@@ -85,6 +85,11 @@ const orginItems = ref([
     title: '用户管理',
   },
   {
+    key: '/admin/appManage',
+    label: '应用管理',
+    title: '应用管理',
+  },
+  {
     key: 'others',
     label: h('a', { href: 'https://github.com/wjp527', target: '_blank' }, '编程导航'),
     title: '编程导航',

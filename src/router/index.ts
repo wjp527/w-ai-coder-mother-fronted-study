@@ -32,6 +32,22 @@ const router = createRouter({
         access: ACCESS_ENUM.ADMIN
       }
     },
+    ,
+    {
+      path: '/admin/appManage',
+      name: '应用管理',
+      component: () => import('../views/admin/AppManagePage.vue'),
+    },
+    {
+      path: '/app/chat/:id',
+      name: '应用对话',
+      component: () => import('../views/app/AppChatPage.vue'),
+    },
+    {
+      path: '/app/edit/:id',
+      name: '编辑应用',
+      component: () => import('../views/app/AppEditPage.vue'),
+    },
     {
       path: '/:pathMatch(.*)*',
       name: '找不到页面',
