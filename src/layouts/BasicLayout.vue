@@ -34,7 +34,7 @@ const isHomePage = computed(() => route.path === '/')
 }
 
 .main-content {
-  max-width: 1200px;
+  width: 1200px;
   padding: 24px;
   background: white;
   margin: 16px auto 56px;

@@ -49,6 +49,11 @@ const router = createRouter({
       component: () => import('../views/app/AppEditPage.vue'),
     },
     {
+      path: '/admin/chatManage',
+      name: '对话管理',
+      component: () => import('../views/admin/ChatManagePage.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: '找不到页面',
       component: () => import('../views/noAuth/index.vue'),
