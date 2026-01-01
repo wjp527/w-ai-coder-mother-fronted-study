@@ -144,6 +144,10 @@ declare namespace API {
     id?: number
   }
 
+  type exportAppCodeToMdParams = {
+    appId: number
+  }
+
   type getAppVOByIdByAdminParams = {
     id: number
   }

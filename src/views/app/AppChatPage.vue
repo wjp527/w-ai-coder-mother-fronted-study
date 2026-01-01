@@ -12,6 +12,12 @@
           </template>
           应用详情
         </a-button>
+        <a-button type="default" @click="exportAppCode" :loading="exporting">
+          <template #icon>
+            <DownloadOutlined />
+          </template>
+          导出代码
+        </a-button>
         <a-button type="primary" @click="deployApp" :loading="deploying">
           <template #icon>
             <CloudUploadOutlined />
@@ -169,6 +175,7 @@ import {
   SendOutlined,
   ExportOutlined,
   InfoCircleOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons-vue'
 
 const route = useRoute()
@@ -207,6 +214,9 @@ const previewReady = ref(false)
 const deploying = ref(false)
 const deployModalVisible = ref(false)
 const deployUrl = ref('')
+
+// 导出相关
+const exporting = ref(false)
 
 // 权限相关
 const isOwner = computed(() => {
@@ -567,6 +577,82 @@ const deployApp = async () => {
     message.error('部署失败，请重试')
   } finally {
     deploying.value = false
+  }
+}
+
+// 导出应用代码
+const exportAppCode = async () => {
+  if (!appId.value) {
+    message.error('应用ID不存在')
+    return
+  }
+
+  exporting.value = true
+  try {
+    // 使用 blob 方式下载文件
+    const baseURL = request.defaults.baseURL || API_BASE_URL
+    const url = `${baseURL}/app/export/code/${appId.value}`
+
+    const response = await request({
+      url,
+      method: 'GET',
+      responseType: 'blob',
+      withCredentials: true,
+    })
+
+    // 从响应头中获取文件名
+    const contentDisposition = response.headers['content-disposition']
+    let fileName = `${appInfo.value?.appName || 'app'}.md`
+
+    if (contentDisposition) {
+      const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (fileNameMatch && fileNameMatch[1]) {
+        fileName = fileNameMatch[1].replace(/['"]/g, '')
+        // 处理可能的 UTF-8 编码文件名
+        if (fileName.startsWith("UTF-8''")) {
+          fileName = decodeURIComponent(fileName.replace(/UTF-8''/, ''))
+        }
+      }
+    }
+
+    // 创建 blob 对象
+    const blob = new Blob([response.data], { type: 'text/markdown' })
+
+    // 创建下载链接
+    const downloadUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+
+    // 清理
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(downloadUrl)
+
+    message.success('导出成功')
+  } catch (error) {
+    console.error('导出失败：', error)
+
+    // 尝试解析错误响应（可能是 JSON 格式的错误信息）
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { data?: Blob } }
+      if (axiosError.response?.data instanceof Blob) {
+        try {
+          const text = await axiosError.response.data.text()
+          const errorData = JSON.parse(text) as { message?: string }
+          message.error('导出失败：' + (errorData.message || '未知错误'))
+        } catch {
+          message.error('导出失败，请重试')
+        }
+      } else {
+        message.error('导出失败，请重试')
+      }
+    } else {
+      message.error('导出失败，请重试')
+    }
+  } finally {
+    exporting.value = false
   }
 }
 
