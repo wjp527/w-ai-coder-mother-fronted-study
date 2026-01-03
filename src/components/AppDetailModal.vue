@@ -11,6 +11,10 @@
           <span class="info-label">创建时间：</span>
           <span>{{ formatTime(app?.createTime) }}</span>
         </div>
+        <div class="info-item" v-if="app?.codeGenType">
+          <span class="info-label">生成类型：</span>
+          <span>{{ formatCodeGenType(app.codeGenType) }}</span>
+        </div>
       </div>
 
       <!-- 操作栏（仅本人或管理员可见） -->
@@ -46,6 +50,7 @@ import { computed } from 'vue'
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import UserInfo from './UserInfo.vue'
 import { formatTime } from '@/utils/time'
+import { formatCodeGenType } from '@/utils/codeGenTypes'
 
 interface Props {
   open: boolean
