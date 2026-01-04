@@ -23,7 +23,7 @@ export function injectVisualEditorScript(
   onElementSelected: (element: SelectedElement) => void
 ): () => void {
   if (!iframe.contentWindow) {
-    return () => {}
+    return () => { }
   }
 
   try {
@@ -86,7 +86,7 @@ export function injectVisualEditorScript(
         return `#${element.id}`
       }
 
-      let path: string[] = []
+      const path: string[] = []
       while (element && element.nodeType === Node.ELEMENT_NODE) {
         let selector = element.nodeName.toLowerCase()
 
@@ -253,7 +253,7 @@ export function injectVisualEditorScript(
     }
   } catch (error) {
     console.error('注入可视化编辑脚本失败:', error)
-    return () => {}
+    return () => { }
   }
 }
 
