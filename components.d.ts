@@ -43,12 +43,15 @@ declare module 'vue' {
     ATag: typeof import('ant-design-vue/es')['Tag']
     ATextarea: typeof import('ant-design-vue/es')['Textarea']
     ATooltip: typeof import('ant-design-vue/es')['Tooltip']
+    AUpload: typeof import('ant-design-vue/es')['Upload']
     DeploySuccessModal: typeof import('./src/components/DeploySuccessModal.vue')['default']
     GlobalFooter: typeof import('./src/components/GlobalFooter.vue')['default']
     GlobalHeader: typeof import('./src/components/GlobalHeader.vue')['default']
     MarkdownRenderer: typeof import('./src/components/MarkdownRenderer.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TAttachments: typeof import('tdesign-vue-next')['Attachments']
+    TSpace: typeof import('tdesign-vue-next')['Space']
     UserInfo: typeof import('./src/components/UserInfo.vue')['default']
   }
 }

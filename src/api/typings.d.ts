@@ -62,6 +62,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseFileUploadVO = {
+    code?: number
+    data?: FileUploadVO
+    message?: string
+  }
+
   type BaseResponseLoginUserVO = {
     code?: number
     data?: LoginUserVO
@@ -122,6 +128,17 @@ declare namespace API {
     isDelete?: number
   }
 
+  type ChatHistoryOriginal = {
+    id?: number
+    message?: string
+    messageType?: string
+    appId?: number
+    userId?: number
+    createTime?: string
+    updateTime?: string
+    isDelete?: number
+  }
+
   type ChatHistoryQueryRequest = {
     pageNum?: number
     pageSize?: number
@@ -152,11 +169,20 @@ declare namespace API {
     appId: number
   }
 
+  type FileUploadVO = {
+    url?: string
+    filename?: string
+  }
+
   type getAppVOByIdByAdminParams = {
     id: number
   }
 
   type getAppVOByIdParams = {
+    id: number
+  }
+
+  type getInfo1Params = {
     id: number
   }
 
@@ -185,6 +211,10 @@ declare namespace API {
     updateTime?: string
   }
 
+  type page1Params = {
+    page: PageChatHistoryOriginal
+  }
+
   type PageAppVO = {
     records?: AppVO[]
     pageNumber?: number
@@ -196,6 +226,15 @@ declare namespace API {
 
   type PageChatHistory = {
     records?: ChatHistory[]
+    pageNumber?: number
+    pageSize?: number
+    totalPage?: number
+    totalRow?: number
+    optimizeCountQuery?: boolean
+  }
+
+  type PageChatHistoryOriginal = {
+    records?: ChatHistoryOriginal[]
     pageNumber?: number
     pageSize?: number
     totalPage?: number
@@ -223,6 +262,10 @@ declare namespace API {
     totalPage?: number
     totalRow?: number
     optimizeCountQuery?: boolean
+  }
+
+  type remove1Params = {
+    id: number
   }
 
   type removeParams = {

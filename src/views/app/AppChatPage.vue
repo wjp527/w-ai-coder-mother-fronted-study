@@ -84,6 +84,31 @@
               style="margin-bottom: 8px"
             />
           </div>
+          <!-- 附件列表组件 - 放在输入框上方 -->
+          <div v-if="filesList && filesList.length > 0" class="attachments-list">
+            <div
+              v-for="(file, index) in filesList"
+              :key="file.uid"
+              class="attachment-item"
+              @click="handleFileClick(file)"
+            >
+              <PaperClipOutlined class="attachment-icon" />
+              <span class="attachment-name">{{ file.name }}</span>
+              <span class="attachment-size">{{ formatFileSize(file.size) }}</span>
+              <a-button
+                type="text"
+                size="small"
+                danger
+                @click.stop="removeFile(index)"
+                class="attachment-delete-btn"
+                :disabled="!isOwner"
+              >
+                <template #icon>
+                  <DeleteOutlined />
+                </template>
+              </a-button>
+            </div>
+          </div>
           <div class="input-wrapper">
             <a-tooltip v-if="!isOwner" title="无法在别人的作品下对话哦~" placement="top">
               <a-textarea
@@ -105,6 +130,26 @@
               :disabled="isGenerating"
             />
             <div class="input-actions">
+              <a-upload
+                :before-upload="handleFileUpload"
+                :show-upload-list="false"
+                :disabled="!isOwner || isGenerating"
+                accept="*/*"
+                multiple
+              >
+                <template #default>
+                  <a-button
+                    type="default"
+                    :disabled="!isOwner || isGenerating"
+                    style="margin-right: 8px"
+                  >
+                    <template #icon>
+                      <UploadOutlined />
+                    </template>
+                    上传文件
+                  </a-button>
+                </template>
+              </a-upload>
               <a-button
                 type="primary"
                 @click="sendMessage"
@@ -195,6 +240,7 @@ import {
   deleteApp as deleteAppApi,
 } from '@/api/appController'
 import { listAppChatHistory } from '@/api/chatHistoryController'
+import { upload as uploadFile } from '@/api/fileController'
 import { CodeGenTypeEnum, formatCodeGenType } from '@/utils/codeGenTypes'
 import request from '@/request'
 
@@ -213,12 +259,112 @@ import {
 import {
   CloudUploadOutlined,
   SendOutlined,
-  ExportOutlined,
   InfoCircleOutlined,
   DownloadOutlined,
   CodeOutlined,
   EditOutlined,
+  PaperClipOutlined,
+  UploadOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons-vue'
+
+// #region agent log
+interface FileItem {
+  uid: string
+  name: string
+  size: number
+  url?: string
+  description?: string
+  status?: string
+  percent?: string
+}
+
+const logDebug = (message: string, data?: Record<string, unknown>) => {
+  fetch('http://127.0.0.1:7242/ingest/713692ac-a0ce-4baa-97ba-ca9e731e001c', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      location: 'AppChatPage.vue:224',
+      message,
+      data: data || {},
+      timestamp: Date.now(),
+      sessionId: 'debug-session',
+      runId: 'run1',
+      hypothesisId: 'A',
+    }),
+  }).catch(() => {})
+}
+// #endregion
+
+const filesList = ref<FileItem[]>([])
+const uploading = ref(false)
+
+const handleFileClick = (file: FileItem) => {
+  // #region agent log
+  logDebug('File clicked', { file, eventType: typeof file })
+  // #endregion
+  console.log('fileClick', file)
+  // 如果文件有 URL，在新窗口打开
+  if (file.url) {
+    window.open(file.url, '_blank')
+  }
+}
+
+// 处理文件上传
+const handleFileUpload = async (file: File): Promise<boolean> => {
+  if (!isOwner.value) {
+    message.warning('无法在别人的作品下上传文件哦~')
+    return false
+  }
+
+  uploading.value = true
+
+  try {
+    // 调用上传接口
+    const res = await uploadFile(file)
+
+    if (res.data.code === 0 && res.data.data) {
+      const { url, filename } = res.data.data
+
+      // 添加到文件列表
+      const fileItem: FileItem = {
+        uid: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: filename || file.name,
+        size: file.size,
+        url: url,
+      }
+
+      filesList.value.push(fileItem)
+      message.success('文件上传成功')
+
+      // #region agent log
+      logDebug('File uploaded successfully', { fileItem, url, filename })
+      // #endregion
+    } else {
+      message.error('上传失败：' + (res.data.message || '未知错误'))
+      return false
+    }
+  } catch (error) {
+    console.error('文件上传失败：', error)
+    message.error('文件上传失败，请重试')
+    return false
+  } finally {
+    uploading.value = false
+  }
+
+  // 阻止默认上传行为，因为我们自己处理
+  return false
+}
+
+// 移除文件
+const removeFile = (index: number) => {
+  if (!isOwner.value) {
+    message.warning('无法在别人的作品下删除文件哦~')
+    return
+  }
+  filesList.value.splice(index, 1)
+  message.success('文件已移除')
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -429,7 +575,8 @@ const sendInitialMessage = async (prompt: string) => {
 
 // 发送消息
 const sendMessage = async () => {
-  if (!userInput.value.trim() || isGenerating.value) {
+  // 如果输入框为空且没有附件，则不发送
+  if ((!userInput.value.trim() && filesList.value.length === 0) || isGenerating.value) {
     return
   }
 
@@ -444,6 +591,23 @@ const sendMessage = async () => {
     fullMessage += formatElementsToPrompt(selectedElements.value)
   }
 
+  // 如果有附件，将附件信息添加到提示词中
+  if (filesList.value.length > 0) {
+    const fileInfo = filesList.value
+      .map((file) => {
+        let info = `文件: ${file.name}`
+        if (file.url) {
+          info += ` (URL: ${file.url})`
+        }
+        if (file.size) {
+          info += ` (大小: ${formatFileSize(file.size)})`
+        }
+        return info
+      })
+      .join('\n')
+    fullMessage += `\n\n附件信息:\n${fileInfo}`
+  }
+
   // 清空输入框
   userInput.value = ''
 
@@ -451,12 +615,20 @@ const sendMessage = async () => {
   clearSelectedElements()
   exitEditMode()
 
-  // 添加用户消息（显示原始输入，不包含元素信息）
+  // 添加用户消息（显示原始输入和附件信息，不包含元素信息）
+  let displayContent = originalUserInput
+  if (filesList.value.length > 0) {
+    displayContent += `\n[附件: ${filesList.value.map((f) => f.name).join(', ')}]`
+  }
+
   messages.value.push({
     type: 'user',
-    content: originalUserInput,
+    content: displayContent,
     createTime: new Date().toISOString(),
   })
+
+  // 发送消息后清空文件列表
+  filesList.value = []
 
   // 添加AI消息占位符
   const aiMessageIndex = messages.value.length
@@ -929,6 +1101,15 @@ const editApp = () => {
   }
 }
 
+// 格式化文件大小
+const formatFileSize = (bytes: number): string => {
+  if (!bytes) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+}
+
 // 删除应用
 const deleteApp = async () => {
   if (!appInfo.value?.id) return
@@ -950,6 +1131,67 @@ const deleteApp = async () => {
 
 // 页面加载时获取应用信息
 onMounted(() => {
+  // #region agent log
+  logDebug('Component mounted, filesList length', {
+    length: filesList.value.length,
+    filesList: filesList.value,
+  })
+  nextTick(() => {
+    const attachmentsEl = document.querySelector('.attachments-list') as HTMLElement
+    if (attachmentsEl) {
+      const computedStyle = window.getComputedStyle(attachmentsEl)
+      const rect = attachmentsEl.getBoundingClientRect()
+      logDebug('Attachments element detailed check', {
+        exists: true,
+        display: computedStyle.display,
+        visibility: computedStyle.visibility,
+        opacity: computedStyle.opacity,
+        height: attachmentsEl.offsetHeight,
+        width: attachmentsEl.offsetWidth,
+        top: rect.top,
+        left: rect.left,
+        bottom: rect.bottom,
+        right: rect.right,
+        zIndex: computedStyle.zIndex,
+        backgroundColor: computedStyle.backgroundColor,
+        overflow: computedStyle.overflow,
+        maxHeight: computedStyle.maxHeight,
+        items: attachmentsEl.querySelectorAll('.attachment-item').length,
+        parent: attachmentsEl.parentElement?.className || 'no parent',
+        scrollHeight: attachmentsEl.scrollHeight,
+        clientHeight: attachmentsEl.clientHeight,
+        viewportHeight: window.innerHeight,
+        isInViewport:
+          rect.top >= 0 &&
+          rect.left >= 0 &&
+          rect.bottom <= window.innerHeight &&
+          rect.right <= window.innerWidth,
+      })
+
+      // 检查第一个附件项
+      const firstItem = attachmentsEl.querySelector('.attachment-item') as HTMLElement
+      if (firstItem) {
+        const itemStyle = window.getComputedStyle(firstItem)
+        const itemRect = firstItem.getBoundingClientRect()
+        logDebug('First attachment item check', {
+          exists: true,
+          display: itemStyle.display,
+          visibility: itemStyle.visibility,
+          opacity: itemStyle.opacity,
+          height: firstItem.offsetHeight,
+          width: firstItem.offsetWidth,
+          top: itemRect.top,
+          left: itemRect.left,
+          backgroundColor: itemStyle.backgroundColor,
+          color: itemStyle.color,
+          textContent: firstItem.textContent?.substring(0, 50),
+        })
+      }
+    } else {
+      logDebug('Attachments element not found in DOM', {})
+    }
+  })
+  // #endregion
   fetchAppInfo()
 })
 
@@ -1090,6 +1332,90 @@ onUnmounted(() => {
 
 .selected-elements-alert {
   margin-bottom: 12px;
+}
+
+/* 附件列表样式 */
+.attachments-list {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  min-height: 60px;
+}
+
+.attachments-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.attachments-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.attachments-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.attachments-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.attachment-item:hover {
+  background: #e6f7ff;
+  border-color: #1890ff;
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.attachment-item:hover .attachment-delete-btn {
+  opacity: 1;
+}
+
+.attachment-delete-btn {
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.attachment-item:last-child {
+  margin-bottom: 0;
+}
+
+.attachment-icon {
+  margin-right: 8px;
+  color: #1890ff;
+}
+
+.attachment-name {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-size {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #999;
 }
 
 .input-wrapper {
