@@ -90,12 +90,17 @@
               v-for="(file, index) in filesList"
               :key="file.uid"
               class="attachment-item"
-              @click="handleFileClick(file)"
+              :class="{ uploading: file.uploading }"
+              @click="!file.uploading && handleFileClick(file)"
             >
               <PaperClipOutlined class="attachment-icon" />
               <span class="attachment-name">{{ file.name }}</span>
               <span class="attachment-size">{{ formatFileSize(file.size) }}</span>
+              <div v-if="file.uploading" class="attachment-loading">
+                <a-spin size="small" />
+              </div>
               <a-button
+                v-else
                 type="text"
                 size="small"
                 danger
@@ -184,7 +189,7 @@
             </a-button>
             <a-button v-if="previewUrl" type="link" @click="openInNewTab">
               <template #icon>
-                <ExpoOutlined />
+                <ExportOutlined />
               </template>
               新窗口打开
             </a-button>
@@ -266,6 +271,7 @@ import {
   PaperClipOutlined,
   UploadOutlined,
   DeleteOutlined,
+  ExportOutlined,
 } from '@ant-design/icons-vue'
 
 // #region agent log
@@ -277,6 +283,7 @@ interface FileItem {
   description?: string
   status?: string
   percent?: string
+  uploading?: boolean
 }
 
 const logDebug = (message: string, data?: Record<string, unknown>) => {
@@ -297,7 +304,6 @@ const logDebug = (message: string, data?: Record<string, unknown>) => {
 // #endregion
 
 const filesList = ref<FileItem[]>([])
-const uploading = ref(false)
 
 const handleFileClick = (file: FileItem) => {
   // #region agent log
@@ -317,7 +323,16 @@ const handleFileUpload = async (file: File): Promise<boolean> => {
     return false
   }
 
-  uploading.value = true
+  // 立即添加到文件列表，并标记为上传中
+  const fileUid = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const fileItem: FileItem = {
+    uid: fileUid,
+    name: file.name,
+    size: file.size,
+    uploading: true,
+  }
+
+  filesList.value.push(fileItem)
 
   try {
     // 调用上传接口
@@ -326,30 +341,44 @@ const handleFileUpload = async (file: File): Promise<boolean> => {
     if (res.data.code === 0 && res.data.data) {
       const { url, filename } = res.data.data
 
-      // 添加到文件列表
-      const fileItem: FileItem = {
-        uid: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: filename || file.name,
-        size: file.size,
-        url: url,
+      // 根据 uid 查找并更新文件项
+      const fileIndex = filesList.value.findIndex((f) => f.uid === fileUid)
+      if (fileIndex !== -1) {
+        filesList.value[fileIndex] = {
+          ...filesList.value[fileIndex],
+          name: filename || file.name,
+          url: url,
+          uploading: false,
+        }
       }
 
-      filesList.value.push(fileItem)
       message.success('文件上传成功')
 
       // #region agent log
-      logDebug('File uploaded successfully', { fileItem, url, filename })
+      logDebug('File uploaded successfully', {
+        fileItem: filesList.value[fileIndex],
+        url,
+        filename,
+      })
       // #endregion
     } else {
+      // 上传失败，移除文件项
+      const fileIndex = filesList.value.findIndex((f) => f.uid === fileUid)
+      if (fileIndex !== -1) {
+        filesList.value.splice(fileIndex, 1)
+      }
       message.error('上传失败：' + (res.data.message || '未知错误'))
       return false
     }
   } catch (error) {
     console.error('文件上传失败：', error)
+    // 上传失败，移除文件项
+    const fileIndex = filesList.value.findIndex((f) => f.uid === fileUid)
+    if (fileIndex !== -1) {
+      filesList.value.splice(fileIndex, 1)
+    }
     message.error('文件上传失败，请重试')
     return false
-  } finally {
-    uploading.value = false
   }
 
   // 阻止默认上传行为，因为我们自己处理
@@ -1416,6 +1445,25 @@ onUnmounted(() => {
   margin-left: 8px;
   font-size: 12px;
   color: #999;
+}
+
+.attachment-loading {
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  color: #1890ff;
+}
+
+.attachment-item.uploading {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.attachment-item.uploading:hover {
+  background: #ffffff;
+  border-color: #e8e8e8;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transform: none;
 }
 
 .input-wrapper {
